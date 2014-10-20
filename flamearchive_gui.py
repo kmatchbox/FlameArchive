@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 ###############################################################
-#            flamearchive.py                                  #
+#            flamearchive_aui.py v2.0                         #
 #                                                             #
 # By: Kyle Obley (kyle.obley@gmail.com)                       #
 #                                                             #
@@ -16,9 +16,7 @@ import re
 import glob
 import tarfile
 import tempfile
-
-if len(sys.argv) < 3:
-    sys.exit('\nUsage: python %s /path/to/batch /path/to/archive.tar.gz\n' % sys.argv[0])
+import xml.etree.ElementTree as ET
     
 sourceDir = sys.argv[1]
 destFile = sys.argv[2]
@@ -26,7 +24,7 @@ destFile = sys.argv[2]
 dumpfile = tempfile.NamedTemporaryFile(delete=False)
 
 if os.path.exists(destFile):
-   print '\nERROR: Archive already exists, please specify a different file.\n'
+   os.system("notify-send \"Flame Archive: Archive already exists!\"")
    sys.exit(1)
 
 os.system("notify-send \"Flame Archive: Creating file list...\"")
@@ -38,17 +36,21 @@ for r,d,f in os.walk(sourceDir):
              currentFile = os.path.join(r,files)
              # Hack to skip bunk mio files Flame has greated
              if os.path.getsize(currentFile) > 500:
-                 currentFilePointer = open(currentFile, "r")
+                 tree = ET.parse(currentFile)
+                 root = tree.getroot()
                  
-                 for line in currentFilePointer:
-                     start = '<GATEWAY_NODE_ID type="binary">'
-                     end = '@CLIP'
-                     baseResult = re.search('%s(.*)%s' % (start, end), line).group(1)
+                 # Get the current version used in the batch setup
+                 for version in root.findall('versions'):
+                      currentVersion = version.get('currentVersion')\
+                 
+                 # Get file path for the current version     
+                 for sequence in root.iterfind(".//tracks/track/feeds/*[@vuid='" + currentVersion +"']/spans/span/path"):
+                     baseResult = sequence.text
                      baseResult = re.sub('\[\d*\-\d*\]', '*', baseResult)
-                     
+                     # Write each file path out to the temp file
                      for name in glob.glob(baseResult):
                         dumpfile.write(name + '\n')
-                 currentFilePointer.close()
+
 dumpfile.close()
 
 os.system("notify-send \"Flame Archive: File list complete.\"")
@@ -74,3 +76,5 @@ tar.close()
 
 # Remove temp file
 os.unlink(dumpfile.name)
+
+os.system("notify-send \"Flame Archive: Archive successfully created.\"")
