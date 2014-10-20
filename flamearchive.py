@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 ###############################################################
-#            flamearchive.py                                  #
+#            flamearchive.py v2.0                             #
 #                                                             #
 # By: Kyle Obley (kyle.obley@gmail.com)                       #
 #                                                             #
@@ -16,6 +16,7 @@ import re
 import glob
 import tarfile
 import tempfile
+import xml.etree.ElementTree as ET
 
 if len(sys.argv) < 3:
     sys.exit('\nUsage: python %s /path/to/batch /path/to/archive.tar\n' % sys.argv[0])
@@ -38,22 +39,21 @@ for r,d,f in os.walk(sourceDir):
              currentFile = os.path.join(r,files)
              # Hack to skip bunk mio files Flame has greated
              if os.path.getsize(currentFile) > 500:
-                 currentFilePointer = open(currentFile, "r")
+                 tree = ET.parse(currentFile)
+                 root = tree.getroot()
                  
-                 ## Next version should be
-                 ## start = '<path encoding="file">'
-                 ## end = '</path>'
+                 # Get the current version used in the batch setup
+                 for version in root.findall('versions'):
+                      currentVersion = version.get('currentVersion')\
                  
-                 for line in currentFilePointer:
-                     start = '<GATEWAY_NODE_ID type="binary">'
-                     end = '@CLIP'
-                     baseResult = re.search('%s(.*)%s' % (start, end), line).group(1)
+                 # Get file path for the current version     
+                 for sequence in root.iterfind(".//tracks/track/feeds/*[@vuid='" + currentVersion +"']/spans/span/path"):
+                     baseResult = sequence.text
                      baseResult = re.sub('\[\d*\-\d*\]', '*', baseResult)
-                     
+                     # Write each file path out to the temp file
                      for name in glob.glob(baseResult):
-                        print name
                         dumpfile.write(name + '\n')
-                 currentFilePointer.close()
+
 dumpfile.close()
 
 print('Creating archive...')
