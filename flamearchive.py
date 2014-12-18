@@ -49,7 +49,6 @@ for r,d,f in os.walk(sourceDir):
                  # Get file path for the current version
                  for sequence in root.findall(".//tracks/track/feeds/*[@vuid='" + currentVersion +"']/spans/span/path"):
                      baseResult = sequence.text
-                     print baseResult
                      baseResult = re.sub('\[\d*\-\d*\]', '*', baseResult)
                      # Write each file path out to the temp file
                      for name in glob.glob(baseResult):
