@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 
 ###############################################################
 #            flamearchive.py v2.0                             #
@@ -46,9 +46,10 @@ for r,d,f in os.walk(sourceDir):
                  for version in root.findall('versions'):
                       currentVersion = version.get('currentVersion')\
                  
-                 # Get file path for the current version     
-                 for sequence in root.iterfind(".//tracks/track/feeds/*[@vuid='" + currentVersion +"']/spans/span/path"):
+                 # Get file path for the current version
+                 for sequence in root.findall(".//tracks/track/feeds/*[@vuid='" + currentVersion +"']/spans/span/path"):
                      baseResult = sequence.text
+                     print baseResult
                      baseResult = re.sub('\[\d*\-\d*\]', '*', baseResult)
                      # Write each file path out to the temp file
                      for name in glob.glob(baseResult):
