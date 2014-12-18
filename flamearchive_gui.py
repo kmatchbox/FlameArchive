@@ -44,7 +44,7 @@ for r,d,f in os.walk(sourceDir):
                       currentVersion = version.get('currentVersion')\
                  
                  # Get file path for the current version     
-                 for sequence in root.iterfind(".//tracks/track/feeds/*[@vuid='" + currentVersion +"']/spans/span/path"):
+                 for sequence in root.findall(".//tracks/track/feeds/*[@vuid='" + currentVersion +"']/spans/span/path"):
                      baseResult = sequence.text
                      baseResult = re.sub('\[\d*\-\d*\]', '*', baseResult)
                      # Write each file path out to the temp file
