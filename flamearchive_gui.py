@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 ###############################################################
-#            flamearchive_aui.py v2.0                         #
+#            flamearchive_gui.py v2.1                         #
 #                                                             #
 # By: Kyle Obley (kyle.obley@gmail.com)                       #
 #                                                             #
@@ -16,8 +16,8 @@ import re
 import glob
 import tarfile
 import tempfile
-import xml.etree.ElementTree as ET
-    
+from xml.dom import minidom
+
 sourceDir = sys.argv[1]
 destFile = sys.argv[2]
 
@@ -36,20 +36,23 @@ for r,d,f in os.walk(sourceDir):
              currentFile = os.path.join(r,files)
              # Hack to skip bunk mio files Flame has greated
              if os.path.getsize(currentFile) > 500:
-                 tree = ET.parse(currentFile)
-                 root = tree.getroot()
-                 
+                 sourceMIO = minidom.parse(currentFile)
+
                  # Get the current version used in the batch setup
-                 for version in root.findall('versions'):
-                      currentVersion = version.get('currentVersion')\
-                 
-                 # Get file path for the current version     
-                 for sequence in root.findall(".//tracks/track/feeds/*[@vuid='" + currentVersion +"']/spans/span/path"):
-                     baseResult = sequence.text
-                     baseResult = re.sub('\[\d*\-\d*\]', '*', baseResult)
-                     # Write each file path out to the temp file
-                     for name in glob.glob(baseResult):
-                        dumpfile.write(name + '\n')
+                 versions = sourceMIO.getElementsByTagName('versions')
+                 for node in versions:
+                    currentVersion = node.getAttribute('currentVersion')
+
+                 # Get file path for the current version
+                 feeds = sourceMIO.getElementsByTagName('feed')
+                 for feed in feeds:
+                     if feed.getAttribute('vuid') == currentVersion:
+                         sequence = feed.getElementsByTagName('path')[0].childNodes[0].nodeValue
+                         sequence = re.sub('\[\d*\-\d*\]', '*', sequence)
+
+                         # Write each file path out to the temp file
+                         for name in glob.glob(sequence):
+                            dumpfile.write(name + '\n')
 
 dumpfile.close()
 
